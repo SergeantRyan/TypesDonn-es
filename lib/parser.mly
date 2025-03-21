@@ -1,4 +1,3 @@
-
 %token <string> IDENTIFIER
 %token <Lang.attrib_tp> TP
 %token <bool> BCONSTANT
@@ -34,59 +33,60 @@ tpDecl:
 | n = nodeTpDecl { Either.Left n }
 | r = relTpDecl { Either.Right r }
 
-
 query: cls = list(clause) { Query cls }
 
-/* TODO: to be completed */
 clause: 
-| CREATE; pts = separated_list(COMMA, pattern) { Create pts }
+| CREATE pts = separated_list(COMMA, pattern) { Create pts }
+| DELETE pts = separated_list(COMMA, pattern) { Delete pts }
+| MATCH pts = separated_list(COMMA, pattern) { Match pts }
+| RETURN vs = separated_list(COMMA, IDENTIFIER) { Return vs }
+| SET v = IDENTIFIER; DOT; fn = IDENTIFIER; EQ; e = expr { Set (v, fn, e) }
+| WHERE e = expr { Where e }
 
-
-/* TODO: to be completed */
 pattern: 
 | np = npattern { SimpPattern np }
-| np=npattern relspec p=pattern{CompPattern (np, "foo", p)}
+| np = npattern; relspec = relspec; p = pattern { CompPattern (np, relspec, p) }
 
-relspec: SUB LBRACKET COLON RBRACKET ARROW {}
+relspec: 
+| SUB LBRACKET COLON RBRACKET ARROW { RelSpec }
 
 npattern: 
 | LPAREN; v = IDENTIFIER; COLON; t = IDENTIFIER; RPAREN { DeclPattern(v, t) }
 | LPAREN; v = IDENTIFIER; RPAREN { VarRefPattern(v) }
 
-
-/* Expressions */
-
 primary_expr:
-| vn = IDENTIFIER; DOT; fn = IDENTIFIER 
-     { AttribAcc(vn, fn) }
-| c = BCONSTANT
-     { Const(BoolV(c)) }
-| c = INTCONSTANT
-     { Const(IntV(c)) }
-| c = STRINGCONSTANT
-     { Const(StringV(c)) }
-| LPAREN e = expr RPAREN
-     { e }
+| vn = IDENTIFIER; DOT; fn = IDENTIFIER { AttribAcc(vn, fn) }
+| c = BCONSTANT { Const(BoolV(c)) }
+| c = INTCONSTANT { Const(IntV(c)) }
+| c = STRINGCONSTANT { Const(StringV(c)) }
+| LPAREN e = expr RPAREN { e }
 
-/* TODO: to be completed */
 expr:
 | a = primary_expr { a }
+| e1 = expr; ADD; e2 = expr { Add(e1, e2) }
+| e1 = expr; SUB; e2 = expr { Sub(e1, e2) }
+| e1 = expr; MUL; e2 = expr { Mul(e1, e2) }
+| e1 = expr; DIV; e2 = expr { Div(e1, e2) }
+| e1 = expr; EQ; e2 = expr { Eq(e1, e2) }
+| e1 = expr; LT; e2 = expr { Lt(e1, e2) }
+| e1 = expr; GT; e2 = expr { Gt(e1, e2) }
+| e1 = expr; LE; e2 = expr { Le(e1, e2) }
+| e1 = expr; GE; e2 = expr { Ge(e1, e2) }
+| e1 = expr; AND; e2 = expr { And(e1, e2) }
+| e1 = expr; OR; e2 = expr { Or(e1, e2) }
 
+nodeTpDecl: 
+| LPAREN; COLON; i = IDENTIFIER; a = attrib_declList; RPAREN { DBN (i, a) }
 
-/* Types */
-nodeTpDecl: LPAREN; COLON; i = IDENTIFIER; a = attrib_declList; RPAREN  { DBN (i, a) }
+attrib_decl: 
+| i = IDENTIFIER; t = TP { (i, t) }
 
-attrib_decl: i = IDENTIFIER; t = TP { (i, t) }
 attrib_declList: 
 | LBRACE; ads = separated_list(COMMA, attrib_decl); RBRACE { ads }
 
+relTpDecl:
+| si = nodeTpRef; SUB; LBRACKET; COLON; rlab = IDENTIFIER; RBRACKET; ARROW; ti = nodeTpRef
+  { Graphstruct.DBR (si, rlab, ti) }
 
-/* Relational type declarations of the form (:nt1) -[:rt]-> (:nt2)
- */
-nodeTpRef: LPAREN; COLON; si = IDENTIFIER; RPAREN { si }
-relTpDecl: si = nodeTpRef;
-           SUB; LBRACKET; COLON; rlab = IDENTIFIER; RBRACKET; ARROW; 
-           ti = nodeTpRef
-           { Graphstruct.DBR (si, rlab, ti) }
-
-%%
+nodeTpRef: 
+| LPAREN; COLON; si = IDENTIFIER; RPAREN { si }
