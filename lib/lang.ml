@@ -1,5 +1,4 @@
-
-  (* Names and labels *)
+(* Names and labels *)
 type vname = string   (* names for variables ... *)
   [@@deriving show]
 type fieldname = string   (* names for attribute fields *)
@@ -7,19 +6,19 @@ type fieldname = string   (* names for attribute fields *)
 type label = string  (* labels serving as names for node or relation types *)
   [@@deriving show]
 
-  (* binary arithmetic operators: +, -, *, /, mod *)
+(* binary arithmetic operators: +, -, *, /, mod *)
 type barith = BAadd | BAsub | BAmul | BAdiv | BAmod
   [@@deriving show]
-  
-  (* binary comparison operators: =, >=, >, <=, <, != *)
+
+(* binary comparison operators: =, >=, >, <=, <, != *)
 type bcompar = BCeq | BCge | BCgt | BCle | BClt | BCne
   [@@deriving show]
 
-  (* binary logic operators *)
+(* binary logic operators *)
 type blogic = BLand | BLor
   [@@deriving show]
 
-  (* binary operators, combining all of the above *)
+(* binary operators, combining all of the above *)
 type binop
     = BArith of barith
     | BCompar of bcompar
@@ -35,15 +34,15 @@ type value
 let is_true = function
 | BoolV true -> true
 | _ -> false
-  
-  (* expresssions *)
+
+(* expresssions *)
 type expr
     = Const of value                     (* constant *)
     | AttribAcc of vname * fieldname     (* attribute access *)
     | BinOp of binop * expr * expr       (* binary operation *)
   [@@deriving show]
 
-  (* TODO: needs to be extended to deal with attributes *)
+(* TODO: needs to be extended to deal with attributes *)
 type node_pattern 
   = DeclPattern of vname * label    (* full node pattern with type declaration *)
   | VarRefPattern of vname          (* simple reference to var representing a node *)
@@ -83,3 +82,6 @@ type db_tp = (label, attrib_decl list, label) Graphstruct.db_graph
 type prog = Prog of db_tp * query
   [@@deriving show]
 
+(* Ajouter la définition de RelSpec pour correspondre avec le parser *)
+type relspec = RelSpec of string  (* RelSpec prend un string comme argument *)
+  [@@deriving show]

@@ -11,6 +11,7 @@
 %token CREATE DELETE MATCH RETURN SET WHERE
 %token ARROW
 %token EOF
+%token AND OR
 
 %start<Lang.prog> main
 
@@ -48,7 +49,7 @@ pattern:
 | np = npattern; relspec = relspec; p = pattern { CompPattern (np, relspec, p) }
 
 relspec: 
-| SUB LBRACKET COLON RBRACKET ARROW { RelSpec }
+| SUB LBRACKET COLON RBRACKET ARROW label = IDENTIFIER { RelSpec label }  (* Modifié pour accepter un string *)
 
 npattern: 
 | LPAREN; v = IDENTIFIER; COLON; t = IDENTIFIER; RPAREN { DeclPattern(v, t) }
