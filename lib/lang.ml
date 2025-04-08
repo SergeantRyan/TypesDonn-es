@@ -82,6 +82,3 @@ type db_tp = (label, attrib_decl list, label) Graphstruct.db_graph
 type prog = Prog of db_tp * query
   [@@deriving show]
 
-(* Ajouter la définition de RelSpec pour correspondre avec le parser *)
-type relspec = RelSpec of string  (* RelSpec prend un string comme argument *)
-  [@@deriving show]

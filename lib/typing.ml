@@ -1,19 +1,25 @@
-open Lang
 open Graphstruct
+open Lang
+open Instr
+ 
+type environment = { types:  db_tp; bindings: (vname * label) list }
 
-(* Environnement de typage *)
-type environment = {
-  types : db_tp;
-  bindings : (vname * label) list;
-}
+let initial_environment gt = {types = gt; bindings = []}
+let initial_result gt = Result.Ok (initial_environment gt)
+  
+exception FieldAccError of string
+exception TypeError of string
+
 
 type tc_result = (environment, string list) result
 
-let add_var vn lb env =
-  { env with bindings = (vn, lb) :: env.bindings }
+(* Functions for manipulating the environment *)
 
-let remove_var vn env =
-  { env with bindings = List.remove_assoc vn env.bindings }
+let add_var vn t (env:environment) = 
+  {env with bindings = (vn,t)::env.bindings}
+
+let remove_var vn env = 
+  {env with bindings = List.remove_assoc vn env.bindings}
 
 let check_graph_types (DBG (ntdecls, rtdelcs)) =
   let node_labels = List.map (fun { nlabel; _ } -> nlabel) ntdecls in

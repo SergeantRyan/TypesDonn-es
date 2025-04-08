@@ -1,6 +1,6 @@
 (:A {})
 (:B {})
 
-create (a:A)
-create (b:C) -[: ]-> (a:A)
+create (a:I)
+create (b:E) -[: label1 ]-> (a:A)
 

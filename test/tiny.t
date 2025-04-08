@@ -1,1 +1,1 @@
-  $ dune exec Code_GraphDB f tiny.q
+  $ dune exec Code_Graph f tiny.q

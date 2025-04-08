@@ -33,17 +33,21 @@ let rec normalize_pattern act = function
       let (v2, insts2) = normalize_pattern act p2 in
       (v1, insts1 @ insts2 @ [IActOnRel(act, v1, rlab, v2)])
 
+let normalize_delete_pattern =function
+  | DeleteNodes dn-> List.map (fun v -> IDeleteNode v) dn
+  | DeleteRels dr-> List.map (fun (v1, r, v2) -> IDeleteRel (v1, r, v2)) dr
+
 let normalize_clause = function
   | Create pats -> 
       List.concat_map (fun p -> snd (normalize_pattern CreateAct p)) pats
   | Match pats -> 
       List.concat_map (fun p -> snd (normalize_pattern MatchAct p)) pats
-  | Delete (DeleteNodes vs) ->
-      List.map (fun v -> IDeleteNode v) vs
-  | Delete (DeleteRels rels) ->
-      List.map (fun (v1, r, v2) -> IDeleteRel (v1, r, v2)) rels
-  | Return vs -> [IReturn vs]
-  | Where e -> [IWhere e]
+  | Delete dpats -> 
+    normalize_delete_pattern dpats
+  | Return vn-> 
+    [IReturn(vn)]
+    | Where expr->
+      [IWhere(expr)]
   | Set lst -> List.map (fun (v, f, e) -> ISet (v, f, e)) lst
 
 let normalize_query (Query cls) =

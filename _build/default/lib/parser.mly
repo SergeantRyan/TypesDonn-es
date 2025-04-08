@@ -1,4 +1,3 @@
-
 %token <string> IDENTIFIER
 %token <Lang.attrib_tp> TP
 %token <bool> BCONSTANT
@@ -12,6 +11,7 @@
 %token CREATE DELETE MATCH RETURN SET WHERE
 %token ARROW
 %token EOF
+(*%token AND OR (*utile ???*)*)
 
 %start<Lang.prog> main
 
@@ -34,55 +34,56 @@ tpDecl:
 | n = nodeTpDecl { Either.Left n }
 | r = relTpDecl { Either.Right r }
 
-
 query: cls = list(clause) { Query cls }
 
-/* TODO: to be completed */
-clause: 
-| CREATE; pts = separated_list(COMMA, pattern) { Create pts }
+clause: (*à check*)
+| CREATE pts = separated_list(COMMA, pattern) { Create pts }
+| MATCH pts = separated_list(COMMA, pattern) { Match pts }
+(*| DELETE ptd = delete_pattern { Delete ptd } <-???>  *)
+| RETURN vs = separated_list(COMMA, IDENTIFIER) { Return vs }
+| WHERE e = expr { Where e }
+(*| SET s = separated_list(COMMA,  expr) { Set s }*)
 
-
-/* TODO: to be completed */
 pattern: 
 | np = npattern { SimpPattern np }
-| np=npattern relspec p=pattern{CompPattern (np, "foo", p)}
+| np=npattern; i=relspec; p=pattern{CompPattern (np, "foo", p)}
 
-relspec: SUB LBRACKET COLON RBRACKET ARROW {}
+relspec: SUB LBRACKET COLON IDENTIFIER RBRACKET ARROW { }
 
 npattern: 
 | LPAREN; v = IDENTIFIER; COLON; t = IDENTIFIER; RPAREN { DeclPattern(v, t) }
 | LPAREN; v = IDENTIFIER; RPAREN { VarRefPattern(v) }
 
-
-/* Expressions */
-
 primary_expr:
-| vn = IDENTIFIER; DOT; fn = IDENTIFIER 
-     { AttribAcc(vn, fn) }
-| c = BCONSTANT
-     { Const(BoolV(c)) }
-| c = INTCONSTANT
-     { Const(IntV(c)) }
-| c = STRINGCONSTANT
-     { Const(StringV(c)) }
-| LPAREN e = expr RPAREN
-     { e }
+| vn = IDENTIFIER; DOT; fn = IDENTIFIER { AttribAcc(vn, fn) }
+| c = BCONSTANT { Const(BoolV(c)) }
+| c = INTCONSTANT { Const(IntV(c)) }
+| c = STRINGCONSTANT { Const(StringV(c)) }
+| LPAREN e = expr RPAREN { e }
 
-/* TODO: to be completed */
 expr:
 | a = primary_expr { a }
+| e1 = expr; ADD; e2 = expr { BinOp(BArith(BAadd),e1, e2) }
+| e1 = expr; SUB; e2 = expr { BinOp(BArith(BAsub),e1, e2) }
+| e1 = expr; MUL; e2 = expr { BinOp(BArith(BAmul),e1, e2) }
+| e1 = expr; DIV; e2 = expr { BinOp(BArith(BAdiv),e1, e2) }
+| e1 = expr; MOD; e2 = expr { BinOp(BArith(BAmod),e1, e2) }
+| e1 = expr; EQ; e2 = expr { BinOp(BCompar(BCeq),e1, e2) }
+| e1 = expr; GE; e2 = expr { BinOp(BCompar(BCge),e1, e2) }
+| e1 = expr; GT; e2 = expr {  BinOp(BCompar(BCgt),e1, e2) }
+| e1 = expr; LE; e2 = expr {  BinOp(BCompar(BCle),e1, e2) }
+| e1 = expr; LT; e2 = expr {  BinOp(BCompar(BClt),e1, e2) }
+| e1 = expr; NE; e2 = expr {  BinOp(BCompar(BCne),e1, e2) }
+| e1 = expr; BLAND; e2 = expr { BinOp(BLogic(BLand),e1, e2) }
+| e1 = expr; BLOR; e2 = expr { BinOp(BLogic(BLor),e1, e2) }
 
 
-/* Types */
-nodeTpDecl: LPAREN; COLON; i = IDENTIFIER; a = attrib_declList; RPAREN  { DBN (i, a) }
+nodeTpDecl:  LPAREN; COLON; i = IDENTIFIER; a = attrib_declList; RPAREN { DBN (i, a) }
 
 attrib_decl: i = IDENTIFIER; t = TP { (i, t) }
 attrib_declList: 
 | LBRACE; ads = separated_list(COMMA, attrib_decl); RBRACE { ads }
 
-
-/* Relational type declarations of the form (:nt1) -[:rt]-> (:nt2)
- */
 nodeTpRef: LPAREN; COLON; si = IDENTIFIER; RPAREN { si }
 relTpDecl: si = nodeTpRef;
            SUB; LBRACKET; COLON; rlab = IDENTIFIER; RBRACKET; ARROW; 

@@ -11,7 +11,7 @@
 %token CREATE DELETE MATCH RETURN SET WHERE
 %token ARROW
 %token EOF
-%token AND OR
+(*%token AND OR (*utile ???*)*)
 
 %start<Lang.prog> main
 
@@ -36,20 +36,19 @@ tpDecl:
 
 query: cls = list(clause) { Query cls }
 
-clause: 
+clause: (*à check*)
 | CREATE pts = separated_list(COMMA, pattern) { Create pts }
-| DELETE pts = separated_list(COMMA, pattern) { Delete pts }
 | MATCH pts = separated_list(COMMA, pattern) { Match pts }
+(*| DELETE ptd = delete_pattern { Delete ptd } <-???>  *)
 | RETURN vs = separated_list(COMMA, IDENTIFIER) { Return vs }
-| SET v = IDENTIFIER; DOT; fn = IDENTIFIER; EQ; e = expr { Set (v, fn, e) }
 | WHERE e = expr { Where e }
+(*| SET s = separated_list(COMMA,  expr) { Set s }*)
 
 pattern: 
 | np = npattern { SimpPattern np }
-| np = npattern; relspec = relspec; p = pattern { CompPattern (np, relspec, p) }
+| np=npattern; i=relspec; p=pattern{CompPattern (np, "foo", p)}
 
-relspec: 
-| SUB LBRACKET COLON RBRACKET ARROW label = IDENTIFIER { RelSpec label }  (* Modifié pour accepter un string *)
+relspec: SUB LBRACKET COLON IDENTIFIER RBRACKET ARROW { }
 
 npattern: 
 | LPAREN; v = IDENTIFIER; COLON; t = IDENTIFIER; RPAREN { DeclPattern(v, t) }
@@ -64,30 +63,31 @@ primary_expr:
 
 expr:
 | a = primary_expr { a }
-| e1 = expr; ADD; e2 = expr { Add(e1, e2) }
-| e1 = expr; SUB; e2 = expr { Sub(e1, e2) }
-| e1 = expr; MUL; e2 = expr { Mul(e1, e2) }
-| e1 = expr; DIV; e2 = expr { Div(e1, e2) }
-| e1 = expr; EQ; e2 = expr { Eq(e1, e2) }
-| e1 = expr; LT; e2 = expr { Lt(e1, e2) }
-| e1 = expr; GT; e2 = expr { Gt(e1, e2) }
-| e1 = expr; LE; e2 = expr { Le(e1, e2) }
-| e1 = expr; GE; e2 = expr { Ge(e1, e2) }
-| e1 = expr; AND; e2 = expr { And(e1, e2) }
-| e1 = expr; OR; e2 = expr { Or(e1, e2) }
+| e1 = expr; ADD; e2 = expr { BinOp(BArith(BAadd),e1, e2) }
+| e1 = expr; SUB; e2 = expr { BinOp(BArith(BAsub),e1, e2) }
+| e1 = expr; MUL; e2 = expr { BinOp(BArith(BAmul),e1, e2) }
+| e1 = expr; DIV; e2 = expr { BinOp(BArith(BAdiv),e1, e2) }
+| e1 = expr; MOD; e2 = expr { BinOp(BArith(BAmod),e1, e2) }
+| e1 = expr; EQ; e2 = expr { BinOp(BCompar(BCeq),e1, e2) }
+| e1 = expr; GE; e2 = expr { BinOp(BCompar(BCge),e1, e2) }
+| e1 = expr; GT; e2 = expr {  BinOp(BCompar(BCgt),e1, e2) }
+| e1 = expr; LE; e2 = expr {  BinOp(BCompar(BCle),e1, e2) }
+| e1 = expr; LT; e2 = expr {  BinOp(BCompar(BClt),e1, e2) }
+| e1 = expr; NE; e2 = expr {  BinOp(BCompar(BCne),e1, e2) }
+| e1 = expr; BLAND; e2 = expr { BinOp(BLogic(BLand),e1, e2) }
+| e1 = expr; BLOR; e2 = expr { BinOp(BLogic(BLor),e1, e2) }
 
-nodeTpDecl: 
-| LPAREN; COLON; i = IDENTIFIER; a = attrib_declList; RPAREN { DBN (i, a) }
 
-attrib_decl: 
-| i = IDENTIFIER; t = TP { (i, t) }
+nodeTpDecl:  LPAREN; COLON; i = IDENTIFIER; a = attrib_declList; RPAREN { DBN (i, a) }
 
+attrib_decl: i = IDENTIFIER; t = TP { (i, t) }
 attrib_declList: 
 | LBRACE; ads = separated_list(COMMA, attrib_decl); RBRACE { ads }
 
-relTpDecl:
-| si = nodeTpRef; SUB; LBRACKET; COLON; rlab = IDENTIFIER; RBRACKET; ARROW; ti = nodeTpRef
-  { Graphstruct.DBR (si, rlab, ti) }
+nodeTpRef: LPAREN; COLON; si = IDENTIFIER; RPAREN { si }
+relTpDecl: si = nodeTpRef;
+           SUB; LBRACKET; COLON; rlab = IDENTIFIER; RBRACKET; ARROW; 
+           ti = nodeTpRef
+           { Graphstruct.DBR (si, rlab, ti) }
 
-nodeTpRef: 
-| LPAREN; COLON; si = IDENTIFIER; RPAREN { si }
+%%
