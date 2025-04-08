@@ -45,7 +45,7 @@ val xv_separated_nonempty_list_COMMA_IDENTIFIER_ : string list
 val xv_separated_list_COMMA_pattern_ : Lang.pattern list
 val xv_separated_list_COMMA_attrib_decl_ : Lang.attrib_decl list
 val xv_separated_list_COMMA_IDENTIFIER_ : string list
-val xv_relspec : unit
+val xv_relspec : string
 val xv_relTpDecl : (string, string) Graphstruct.db_rel
 val xv_query : Lang.query
 val xv_prog : Lang.prog

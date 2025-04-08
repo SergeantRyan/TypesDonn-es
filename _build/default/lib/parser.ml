@@ -238,7 +238,7 @@ and ('s, 'r) _menhir_cell1_pattern =
   | MenhirCell1_pattern of 's * ('s, 'r) _menhir_state * (Lang.pattern)
 
 and 's _menhir_cell0_relspec = 
-  | MenhirCell0_relspec of 's * (unit)
+  | MenhirCell0_relspec of 's * (string)
 
 and ('s, 'r) _menhir_cell1_tpDecl = 
   | MenhirCell1_tpDecl of 's * ('s, 'r) _menhir_state * (((string, Lang.attrib_decl list) Graphstruct.db_node,
@@ -593,7 +593,7 @@ let _menhir_action_37 =
   fun i np p ->
     (
 # 49 "lib/parser.mly"
-                                   (CompPattern (np, "foo", p))
+                                   (CompPattern (np, i, p))
 # 598 "lib/parser.ml"
      : (Lang.pattern))
 
@@ -662,12 +662,12 @@ let _menhir_action_45 =
      : ((string, string) Graphstruct.db_rel))
 
 let _menhir_action_46 =
-  fun () ->
+  fun i ->
     (
 # 51 "lib/parser.mly"
-                                                      ( )
+                                                        ( i )
 # 670 "lib/parser.ml"
-     : (unit))
+     : (string))
 
 let _menhir_action_47 =
   fun x ->
@@ -1390,7 +1390,7 @@ include struct
               | COLON ->
                   let _tok = _menhir_lexer _menhir_lexbuf in
                   (match (_tok : MenhirBasics.token) with
-                  | IDENTIFIER _ ->
+                  | IDENTIFIER _v_0 ->
                       let _tok = _menhir_lexer _menhir_lexbuf in
                       (match (_tok : MenhirBasics.token) with
                       | RBRACKET ->
@@ -1398,7 +1398,8 @@ include struct
                           (match (_tok : MenhirBasics.token) with
                           | ARROW ->
                               let _tok = _menhir_lexer _menhir_lexbuf in
-                              let _v = _menhir_action_46 () in
+                              let i = _v_0 in
+                              let _v = _menhir_action_46 i in
                               let _menhir_stack = MenhirCell0_relspec (_menhir_stack, _v) in
                               (match (_tok : MenhirBasics.token) with
                               | LPAREN ->
@@ -2142,4 +2143,4 @@ let main =
 # 93 "lib/parser.mly"
   
 
-# 2146 "lib/parser.ml"
+# 2147 "lib/parser.ml"

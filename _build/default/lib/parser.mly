@@ -46,9 +46,9 @@ clause: (*à check*)
 
 pattern: 
 | np = npattern { SimpPattern np }
-| np=npattern; i=relspec; p=pattern{CompPattern (np, "foo", p)}
+| np=npattern; i=relspec; p=pattern{CompPattern (np, i, p)}
 
-relspec: SUB LBRACKET COLON IDENTIFIER RBRACKET ARROW { }
+relspec: SUB LBRACKET COLON i=IDENTIFIER RBRACKET ARROW { i }
 
 npattern: 
 | LPAREN; v = IDENTIFIER; COLON; t = IDENTIFIER; RPAREN { DeclPattern(v, t) }

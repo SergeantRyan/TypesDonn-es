@@ -62,6 +62,12 @@ let create_node v lb (State(g, tab, mn)) =
 (* TODO: complete following definition *)
 let exec_instr s = function
   | IActOnNode (CreateAct, v, lb) -> create_node v lb s 
+  (*| IActOnRel (CreateActt,sv,lb,tv) ->
+  | IDeleteNode ->
+  | IDeleteRel -> 
+  | IReturn ->
+  | IWhere ->
+  | ISet ->*) 
   | _ -> s
   
 
