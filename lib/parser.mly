@@ -39,10 +39,10 @@ query: cls = list(clause) { Query cls }
 clause: (*à check*)
 | CREATE pts = separated_list(COMMA, pattern) { Create pts }
 | MATCH pts = separated_list(COMMA, pattern) { Match pts }
-(*| DELETE ptd = delete_pattern { Delete ptd } <-???>  *)
+| DELETE ptd = delete_pattern { Delete (ptd) }
 | RETURN vs = separated_list(COMMA, IDENTIFIER) { Return vs }
 | WHERE e = expr { Where e }
-(*| SET s = separated_list(COMMA,  expr) { Set s }*)
+| SET s = separated_list(COMMA,  attrib) { Set s }
 
 pattern: 
 | np = npattern { SimpPattern np }
@@ -53,6 +53,16 @@ relspec: SUB LBRACKET COLON i=IDENTIFIER RBRACKET ARROW { i }
 npattern: 
 | LPAREN; v = IDENTIFIER; COLON; t = IDENTIFIER; RPAREN { DeclPattern(v, t) }
 | LPAREN; v = IDENTIFIER; RPAREN { VarRefPattern(v) }
+
+delete_pattern:
+| n=separated_list(COMMA, dp) {DeleteNodes(n)}
+| r=separated_list(COMMA, dpr) {DeleteRels(r)}
+
+dpr: d1=dp;i=relspec;d2=dp {d1,i,d2}
+
+dp: LPAREN; v = IDENTIFIER; RPAREN {v}
+
+attrib: v=IDENTIFIER DOT f=IDENTIFIER EQ e=expr {v,f,e}
 
 primary_expr:
 | vn = IDENTIFIER; DOT; fn = IDENTIFIER { AttribAcc(vn, fn) }
