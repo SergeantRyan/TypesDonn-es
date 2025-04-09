@@ -58,12 +58,36 @@ let create_node v lb (State(g, tab, mn)) =
   let new_graph = add_nodes_to_graph new_nodes g in 
   State (new_graph, new_tab, mn + 1)
 
+let create_rel sv lb tv (State(g, tab, mn)) = 
+  let Table(vns, lns) = tab in 
+  let nid1= List.nth (List.hd lns) (Option.get (List.find_index (fun v -> v==sv) vns)) in 
+  let nid2= List.nth (List.hd lns) (Option.get (List.find_index (fun v -> v==tv) vns)) in
+  let r= DBR(nid1,lb,nid2) in
+  let new_graph = add_rel_to_graph g r in 
+  State (new_graph, tab, mn) 
+
+let match_node v lb (State(g, tab, mn)) = 
+  let Table(_vns, lns) = tab in 
+  let new_node_ids = List.init (List.length lns) (fun i -> i) in (*probablement faux*) 
+  let new_tab = add_var_mult_nodes_to_table v new_node_ids tab in
+  State (g, new_tab, mn)
+
+let match_rel sv lb tv (State(g, tab, mn)) = 
+  State (g, tab, mn)  (*dépend de match node incomplet*)
+
+(*let delete vs (State(g, tab, mn))=
+let Table(_vns, lns) = tab in 
+let new_tab =  in
+let new_graph = List.filter (fun gr -> source_of_rel(rels_of_graph(g))!= v && target_of_rel(rels_of_graph(g))!=v) in 
+State (new_graph, new_tab, mn + 1)*)
 
 (* TODO: complete following definition *)
 let exec_instr s = function
   | IActOnNode (CreateAct, v, lb) -> create_node v lb s 
-  (*| IActOnRel (CreateActt,sv,lb,tv) ->
-  | IDeleteNode ->
+  | IActOnRel (CreateAct,sv,lb,tv) -> create_rel sv lb tv s 
+  | IActOnNode (MatchAct, v, lb) -> match_node v lb s 
+  | IActOnRel (MatchAct,sv,lb,tv) -> match_rel sv lb tv s
+  (**| IDeleteNode (vs) -> 
   | IDeleteRel -> 
   | IReturn ->
   | IWhere ->

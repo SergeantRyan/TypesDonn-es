@@ -55,8 +55,8 @@ npattern:
 | LPAREN; v = IDENTIFIER; RPAREN { VarRefPattern(v) }
 
 delete_pattern:
-| n=separated_list(COMMA, dp) {DeleteNodes(n)}
-| r=separated_list(COMMA, dpr) {DeleteRels(r)}
+| i=dp; n=separated_list(COMMA, dp) {DeleteNodes(i::n)}
+| d1=dp;i=relspec;d2=dp; r=separated_list(COMMA, dpr) {DeleteRels((d1,i,d2)::r)}
 
 dpr: d1=dp;i=relspec;d2=dp {d1,i,d2}
 

@@ -21,7 +21,7 @@ let add_var vn t (env:environment) =
 let remove_var vn env = 
   {env with bindings = List.remove_assoc vn env.bindings}
 
-let check_graph_types (DBG (ntdecls, rtdelcs)) =
+(*let check_graph_types (DBG (ntdecls, rtdelcs)) =
   let node_labels = List.map (fun { nlabel; _ } -> nlabel) ntdecls in
   let errors =
     List.fold_left (fun acc { rlabel; rstart; rend; _ } ->
@@ -33,9 +33,11 @@ let check_graph_types (DBG (ntdecls, rtdelcs)) =
       acc @ errs
     ) [] rtdelcs
   in
-  if errors = [] then Result.Ok () else Result.Error errors
+  if errors = [] then Result.Ok () else Result.Error errors*)
 
-let rec tp_expr env expr =
+  let check_graph_types (DBG (ntdecls, rtdecls)) = Result.Ok ()
+
+(*let rec tp_expr env expr =
   match expr with
   | Bool b -> Result.Ok BoolT
   | Int _ -> Result.Ok IntT
@@ -55,77 +57,48 @@ let rec tp_expr env expr =
       | Some { nattribs; _ } ->
         match List.assoc_opt field nattribs with
         | None -> Result.Error ["Field not found: " ^ field ^ " in node type " ^ label]
-        | Some t -> Result.Ok t
+        | Some t -> Result.Ok t*)
 
-let check_expr e expected env =
-  tp_expr env e >>= fun actual ->
-  if actual = expected then Result.Ok env
-  else Result.Error ["Expression does not have expected type"]
+let rec tp_expr env = function
+  Const v -> IntT
+| AttribAcc (vn, fn) -> IntT
+| BinOp (bop, e1, e2) -> tp_expr env e1
 
-let tc_instr (i : instruction) (env : environment) : tc_result =
-  let DBG (nodes, _) = env.types in
-  let label_exists lb =
-    List.exists (fun { nlabel; _ } -> nlabel = lb) nodes
-  in
+let check_expr e et env : tc_result = 
+  try 
+    if tp_expr env e = et
+    then Result.Ok env
+    else Result.Error ["Expression does not have expected type " ^ (show_attrib_tp et)]
+  with 
+  | TypeError s -> Result.Error [s]
+  | FieldAccError s -> Result.Error [s]
+  
+
+let tc_instr (i: instruction) (env: environment) : tc_result = 
   match i with
-  | IActOnNode (_act, vn, lb) ->
-      if List.mem_assoc vn env.bindings then
-        Result.Error ["Variable already declared: " ^ vn]
-      else if not (label_exists lb) then
-        Result.Error ["Label does not exist: " ^ lb]
-      else
-        Result.Ok (add_var vn lb env)
+  | IActOnNode (_act, vn, lb) -> Result.Error ["not yet implemented"]
+  | _  -> Result.Error ["also not implemented"]
 
-  | IActOnRel (_act, v1, _lb, v2) ->
-      let undeclared = List.filter (fun v -> not (List.mem_assoc v env.bindings)) [v1; v2] in
-      if undeclared = [] then Result.Ok env
-      else Result.Error ["Undeclared variables in relation: " ^ String.concat ", " undeclared]
+(* type check list of instructions and stop on error *)
+let check_and_stop (res : tc_result) i : tc_result = Result.bind res (tc_instr i)
 
-  | IDeleteNode vn ->
-      if List.mem_assoc vn env.bindings then
-        Result.Ok (remove_var vn env)
-      else
-        Result.Error ["Variable not found for deletion: " ^ vn]
+let tc_instrs_stop gt instrs : tc_result = 
+  List.fold_left check_and_stop (initial_result gt) instrs
 
-  | IDeleteRel (v1, _lb, v2) ->
-      let undeclared = List.filter (fun v -> not (List.mem_assoc v env.bindings)) [v1; v2] in
-      if undeclared = [] then Result.Ok env
-      else Result.Error ["Undeclared variables in relation deletion: " ^ String.concat ", " undeclared]
+  (* TODO: typecheck instructions *)
+let typecheck_instructions continue gt instrs np = 
+  let r = Result.Ok initial_environment in   (* call to real typechecker here *)
+  match r with
+  | Result.Error etc -> Printf.printf "%s\n" (String.concat "\n" etc); 
+                        failwith "stopped"
+  |_ -> np
+  
 
-  | IReturn vs ->
-      let duplicate v l = List.length (List.filter ((=) v) l) > 1 in
-      if List.exists (fun v -> not (List.mem_assoc v env.bindings)) vs then
-        Result.Error ["Undeclared variable(s) in return"]
-      else if List.exists (fun v -> duplicate v vs) vs then
-        Result.Error ["Duplicate variable(s) in return"]
-      else
-        let filtered = List.filter (fun (v, _) -> List.mem v vs) env.bindings in
-        Result.Ok { env with bindings = filtered }
-
-  | IWhere e ->
-      check_expr e BoolT env
-
-  | ISet (v, f, e) ->
-      if not (List.mem_assoc v env.bindings) then
-        Result.Error ["Undeclared variable in Set: " ^ v]
-      else
-        let label = List.assoc v env.bindings in
-        let node = List.find (fun { nlabel; _ } -> nlabel = label) nodes in
-        match List.assoc_opt f node.nattribs with
-        | None -> Result.Error ["Field " ^ f ^ " not found in node type " ^ label]
-        | Some tp -> check_expr e tp env
-
-let typecheck (NormProg (db, instrs)) =
-  match check_graph_types db with
-  | Result.Error errs -> Result.Error errs
-  | Result.Ok () ->
-      let env0 = { types = db; bindings = [] } in
-      let rec loop instrs env acc_errors =
-        match instrs with
-        | [] -> if acc_errors = [] then Result.Ok env else Result.Error acc_errors
-        | i :: rest ->
-            match tc_instr i env with
-            | Result.Ok env' -> loop rest env' acc_errors
-            | Result.Error errs -> loop rest env (acc_errors @ errs)
-      in
-      loop instrs env0 []
+  (* Typecheck program; 
+     If continue is true, continue typechecking even 
+     when errors have been discovered (can be ignored in a first version) *)  
+let typecheck continue (NormProg(gt, NormQuery instrs) as np) = 
+  match check_graph_types gt with
+  | Result.Error egt -> Printf.printf "%s\n" ("Undeclared types in\n" ^ egt);
+                        failwith "stopped"
+  | _ -> typecheck_instructions continue gt instrs np

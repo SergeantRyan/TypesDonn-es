@@ -82,7 +82,7 @@ let output_graph_struct g =
   let dotfile = fn ^ ".dot" in
   let pdffile  = fn ^ ".pdf" in
   output_graph_to_file dotfile (convert_to_display_graph g);
-  let _ = Sys.command ("dot -Tpdf " ^ dotfile ^ " -o " ^ pdffile) in 
+  let _ = Sys.command (" -Tpdf " ^ dotfile ^ " -o " ^ pdffile) in 
   ()
 
 
